@@ -1,7 +1,6 @@
 CLI            := devcontainer
 WORKSPACE      := $(CURDIR)
 DOTFILES_REPO  := https://github.com/xortim/dotfiles
-DOTFILES_CMD   := bash install.sh
 
 NO_CACHE ?= 0
 ifeq ($(NO_CACHE),1)
@@ -10,8 +9,7 @@ endif
 
 UP_FLAGS := \
 	--workspace-folder $(WORKSPACE) \
-	--dotfiles-repository $(DOTFILES_REPO) \
-	--dotfiles-install-command "$(DOTFILES_CMD)"
+	--dotfiles-repository $(DOTFILES_REPO)
 
 .PHONY: build up shell down
 
