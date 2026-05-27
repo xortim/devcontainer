@@ -1,0 +1,17 @@
+{
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu26.04",
+  "features": {
+    "ghcr.io/anthropics/devcontainer-features/claude-code:1.0": {}
+  },
+  "mounts": [
+    "source=${localEnv:HOME}/.config/git,target=/home/vscode/.config/git,type=bind,consistency=cached",
+    "source=claude-code-config-${devcontainerId},target=/home/vscode/.claude,type=volume"
+  ],
+  "remoteEnv": {
+    "DISABLE_AUTOUPDATER": "1",
+    "SSH_AUTH_SOCK": "/tmp/1password-agent.sock"
+  },
+  "initializeCommand": "bash .devcontainer/host-1password-relay.sh",
+  "postCreateCommand": "sudo apt-get update && sudo apt-get install -y git socat stow && claude --version",
+  "postStartCommand": "start-stop-daemon --start --background --no-close --exec /usr/bin/socat -- UNIX-LISTEN:/tmp/1password-agent.sock,fork,mode=777 TCP:host.docker.internal:2222 >> /tmp/1password-relay.log 2>&1"
+}
