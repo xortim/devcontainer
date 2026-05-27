@@ -6,6 +6,7 @@
   },
   "mounts": [
     "source=${localEnv:HOME}/.config/git,target=/home/vscode/.config/git,type=bind,consistency=cached",
+    "source=${localEnv:HOME}/dotfiles/nvim,target=/home/vscode/.config/nvim,type=bind,consistency=cached",
     "source=claude-code-config-${devcontainerId},target=/home/vscode/.claude,type=volume"
   ],
   "remoteEnv": {
