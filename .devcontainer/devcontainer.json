@@ -14,5 +14,5 @@
   },
   "initializeCommand": "bash .devcontainer/host-1password-relay.sh",
   "postCreateCommand": "sudo apt-get update && sudo apt-get install -y git socat stow neovim && claude --version",
-  "postStartCommand": "start-stop-daemon --start --background --no-close --exec /usr/bin/socat -- UNIX-LISTEN:/tmp/1password-agent.sock,fork,mode=777 TCP:host.docker.internal:2222 >> /tmp/1password-relay.log 2>&1"
+  "postStartCommand": "start-stop-daemon --start --oknodo --background --no-close --exec /usr/bin/socat -- UNIX-LISTEN:/tmp/1password-agent.sock,fork,mode=777 TCP:host.docker.internal:2222 >> /tmp/1password-relay.log 2>&1"
 }
