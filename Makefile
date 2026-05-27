@@ -1,6 +1,6 @@
 CLI            := devcontainer
 WORKSPACE      := $(CURDIR)
-DOTFILES_REPO  := $(HOME)/dotfiles
+DOTFILES_REPO  := https://github.com/xortim/dotfiles
 DOTFILES_CMD   := bash install.sh
 
 NO_CACHE ?= 0
