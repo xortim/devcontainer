@@ -61,25 +61,28 @@ down-local: ## Stop the host-~/.claude devcontainer
 	$(CLI) down --workspace-folder $(WORKSPACE) $(CONFIG_FLAG)
 
 migrate-claude: ## Copy ~/.claude from the devcontainer Docker volume to host ~/.claude
-	@CONTAINER=$$(docker ps -a \
-	  --filter "label=devcontainer.local_folder=$(WORKSPACE)" \
-	  --format "{{.ID}}" | head -1); \
+	@REAL_WORKSPACE=$$(cd -- "$(WORKSPACE)" 2>/dev/null && pwd -P || echo "$(WORKSPACE)"); \
+	CONTAINER=""; VOLUME=""; \
+	for C in $$(docker ps -a \
+	  --filter "label=devcontainer.local_folder=$$REAL_WORKSPACE" \
+	  --format "{{.ID}}"); do \
+	  V=$$(docker inspect "$$C" \
+	    --format '{{range .Mounts}}{{if and (eq .Destination "/home/vscode/.claude") (eq .Type "volume")}}{{.Name}}{{end}}{{end}}'); \
+	  if [ -n "$$V" ]; then \
+	    CONTAINER="$$C"; VOLUME="$$V"; break; \
+	  fi; \
+	done; \
 	if [ -z "$$CONTAINER" ]; then \
-	  echo "ERROR: No devcontainer found for $(WORKSPACE). Start it once with the default targets first."; \
+	  echo "ERROR: No volume-backed devcontainer found for $$REAL_WORKSPACE. Start it once with the default targets first."; \
 	  exit 1; \
 	fi; \
-	VOLUME=$$(docker inspect "$$CONTAINER" \
-	  --format '{{range .Mounts}}{{if eq .Destination "/home/vscode/.claude"}}{{.Name}}{{end}}{{end}}'); \
-	if [ -z "$$VOLUME" ]; then \
-	  echo "ERROR: No claude volume found in container $$CONTAINER."; \
-	  exit 1; \
-	fi; \
+	HOST_UID=$$(id -u); HOST_GID=$$(id -g); \
 	echo "Copying from Docker volume $$VOLUME to $(HOME)/.claude ..."; \
 	mkdir -p $(HOME)/.claude; \
 	docker run --rm \
 	  -v "$$VOLUME:/src" \
 	  -v "$(HOME)/.claude:/dst" \
-	  alpine sh -c 'cp -a /src/. /dst/'; \
+	  alpine sh -c "cp -a /src/. /dst/ && chown -R $$HOST_UID:$$HOST_GID /dst/"; \
 	echo "Done. You can now use 'make shell-local'."
 
 
