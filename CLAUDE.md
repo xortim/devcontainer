@@ -38,6 +38,6 @@ make migrate-claude                     # copy ~/.claude from Docker volume to h
 - Base image: `mcr.microsoft.com/devcontainers/base:ubuntu26.04`
 - Claude Code is installed via the Anthropic devcontainer feature (`ghcr.io/anthropics/devcontainer-features/claude-code:1.0`).
 - Git config and nvim config are bind-mounted from the host (`~/.config/git`, `~/dotfiles/nvim`).
-- Claude config (`~/.claude`) has two modes: the default targets (`build`, `up`, `shell`, `down`) use a named Docker volume (`claude-code-config-<devcontainerId>`) for per-container isolation; the `*-local` targets (`build-local`, `shell-local`, `down-local`) bind-mount the host's `~/.claude` instead, sharing MCP auth, Bedrock credentials, etc. across containers. The alternate config lives in `.devcontainer/devcontainer.local.json`.
+- Claude config (`~/.claude`) has two modes: the default targets (`build`, `up`, `shell`, `down`) use a named Docker volume (`claude-code-config-<devcontainerId>`) for per-container isolation; the `*-local` targets (`build-local`, `shell-local`, `down-local`) bind-mount the host's `~/.claude` instead, sharing MCP auth, Bedrock credentials, etc. across containers. The alternate config lives in `.devcontainer/local/devcontainer.json`.
 - Dotfiles are applied at `up` time via `--dotfiles-repository https://github.com/xortim/dotfiles`.
 - `DISABLE_AUTOUPDATER=1` prevents Claude Code from auto-updating inside the container.
