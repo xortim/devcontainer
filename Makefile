@@ -3,6 +3,14 @@ WORKSPACE     ?= $(or $(PWD),$(CURDIR))
 DOTFILES_REPO := https://github.com/xortim/dotfiles
 CONFIG_FLAG   := --config $(CURDIR)/.devcontainer/devcontainer.local.json
 
+# External invocation — run from any directory to use that dir as the workspace:
+#   cd ~/workspace/myproject && make -C ~/workspace/devcontainer shell
+#   make -C ~/workspace/devcontainer shell WORKSPACE=~/workspace/myproject
+#
+# WORKSPACE defaults to $PWD (the caller's directory). Targets that need to
+# locate an existing container (down, down-local, migrate-claude) require the
+# same WORKSPACE value that was passed to the original shell / build invocation.
+
 UP_FLAGS := \
 	--workspace-folder $(WORKSPACE) \
 	--dotfiles-repository $(DOTFILES_REPO)
