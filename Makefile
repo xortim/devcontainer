@@ -1,7 +1,7 @@
 CLI           := devcontainer
 WORKSPACE     ?= $(or $(PWD),$(CURDIR))
 DOTFILES_REPO := https://github.com/xortim/dotfiles
-CONFIG_FLAG   := --config $(CURDIR)/.devcontainer/local
+CONFIG_FLAG   := --config $(CURDIR)/.devcontainer/local/devcontainer.json
 
 # External invocation — run from any directory to use that dir as the workspace:
 #   cd ~/workspace/myproject && make -C ~/workspace/devcontainer shell
