@@ -1,32 +1,86 @@
-CLI            := devcontainer
-WORKSPACE      := $(CURDIR)
-DOTFILES_REPO  := https://github.com/xortim/dotfiles
-
-NO_CACHE ?= 0
-ifeq ($(NO_CACHE),1)
-NO_CACHE_FLAG := --build-no-cache
-endif
+CLI           := devcontainer
+WORKSPACE     ?= $(or $(PWD),$(CURDIR))
+DOTFILES_REPO := https://github.com/xortim/dotfiles
+CONFIG_FLAG   := --config $(CURDIR)/.devcontainer/devcontainer.local.json
 
 UP_FLAGS := \
 	--workspace-folder $(WORKSPACE) \
 	--dotfiles-repository $(DOTFILES_REPO)
 
-.PHONY: build up shell down
+LOCAL_FLAGS := $(UP_FLAGS) $(CONFIG_FLAG)
+
+.PHONY: build build-no-cache build-local build-local-no-cache \
+        up up-local shell shell-local down down-local migrate-claude
 
 ########
 ##@ Usage
 
-build: ## Build the devcontainer, set NO_CACHE to 1 to run with --build-no-cache
-	$(CLI) up $(UP_FLAGS) --remove-existing-container $(NO_CACHE_FLAG)
+build: ## Rebuild devcontainer (removes existing container)
+	$(CLI) up $(UP_FLAGS) --remove-existing-container
 
-up: ## Bring up the devcontinaer
+build-no-cache: ## Rebuild devcontainer without Docker layer cache
+	$(CLI) up $(UP_FLAGS) --remove-existing-container --build-no-cache
+
+build-local: ## Rebuild devcontainer with host ~/.claude bind-mounted
+	@test -d $(HOME)/.claude || { \
+	  echo "ERROR: $(HOME)/.claude does not exist."; \
+	  echo "Run 'mkdir -p $(HOME)/.claude' to start fresh, or 'make migrate-claude' first."; \
+	  exit 1; \
+	}
+	$(CLI) up $(LOCAL_FLAGS) --remove-existing-container
+
+build-local-no-cache: ## Rebuild devcontainer with host ~/.claude, no Docker layer cache
+	@test -d $(HOME)/.claude || { \
+	  echo "ERROR: $(HOME)/.claude does not exist."; \
+	  echo "Run 'mkdir -p $(HOME)/.claude' to start fresh, or 'make migrate-claude' first."; \
+	  exit 1; \
+	}
+	$(CLI) up $(LOCAL_FLAGS) --remove-existing-container --build-no-cache
+
+up: ## Start devcontainer
 	$(CLI) up $(UP_FLAGS)
 
-shell: up # Launch zsh inside the devcontainer
+up-local: ## Start devcontainer with host ~/.claude bind-mounted
+	@test -d $(HOME)/.claude || { \
+	  echo "ERROR: $(HOME)/.claude does not exist."; \
+	  echo "Run 'mkdir -p $(HOME)/.claude' to start fresh, or 'make migrate-claude' first."; \
+	  exit 1; \
+	}
+	$(CLI) up $(LOCAL_FLAGS)
+
+shell: up ## Open a zsh shell in the devcontainer
 	$(CLI) exec --workspace-folder $(WORKSPACE) -- /bin/zsh
 
-down: ## Shutdown the devcontainer
+shell-local: up-local ## Open a zsh shell with host ~/.claude bind-mounted
+	$(CLI) exec --workspace-folder $(WORKSPACE) -- /bin/zsh
+
+down: ## Stop the devcontainer
 	$(CLI) down --workspace-folder $(WORKSPACE)
+
+down-local: ## Stop the host-~/.claude devcontainer
+	$(CLI) down --workspace-folder $(WORKSPACE) $(CONFIG_FLAG)
+
+migrate-claude: ## Copy ~/.claude from the devcontainer Docker volume to host ~/.claude
+	@CONTAINER=$$(docker ps -a \
+	  --filter "label=devcontainer.local_folder=$(WORKSPACE)" \
+	  --format "{{.ID}}" | head -1); \
+	if [ -z "$$CONTAINER" ]; then \
+	  echo "ERROR: No devcontainer found for $(WORKSPACE). Start it once with the default targets first."; \
+	  exit 1; \
+	fi; \
+	VOLUME=$$(docker inspect "$$CONTAINER" \
+	  --format '{{range .Mounts}}{{if eq .Destination "/home/vscode/.claude"}}{{.Name}}{{end}}{{end}}'); \
+	if [ -z "$$VOLUME" ]; then \
+	  echo "ERROR: No claude volume found in container $$CONTAINER."; \
+	  exit 1; \
+	fi; \
+	echo "Copying from Docker volume $$VOLUME to $(HOME)/.claude ..."; \
+	mkdir -p $(HOME)/.claude; \
+	docker run --rm \
+	  -v "$$VOLUME:/src" \
+	  -v "$(HOME)/.claude:/dst" \
+	  alpine sh -c 'cp -a /src/. /dst/'; \
+	echo "Done. You can now use 'make shell-local'."
 
 
 ###########################################################################
@@ -48,7 +102,7 @@ help:   ## Display this help
 				printf "Usage:\n  make %s<target>%s\n", col, nocol \
 			} \
 			/^[a-zA-Z_-]+:.*?##/ { \
-				printf "  %s%-15s%s %s\n", col, $$1, nocol, $$2 \
+				printf "  %s%-25s%s %s\n", col, $$1, nocol, $$2 \
 			} \
 			/^##@/ { \
 				printf "\n%s%s%s\n", nocol, substr($$0, 5), nocol \
@@ -64,4 +118,3 @@ log-%:
 			{ \
 				printf "\033[36m==> %s\033[0m\n", $$2 \
 			}'
-
